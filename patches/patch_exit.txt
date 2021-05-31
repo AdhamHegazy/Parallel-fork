@@ -1,0 +1,363 @@
+124c124
+< 	add_device_randomness((const void *)&tsk->se.sum_exec_runtime,
+---
+> 	add_device_randomness((const void*) &tsk->se.sum_exec_runtime,
+207,208c207,208
+< 	if (leader != p && thread_group_empty(leader) &&
+< 	    leader->exit_state == EXIT_ZOMBIE) {
+---
+> 	if (leader != p && thread_group_empty(leader)
+> 			&& leader->exit_state == EXIT_ZOMBIE) {
+269c269
+< 				     struct task_struct *ignored_task)
+---
+> 					struct task_struct *ignored_task)
+273,274c273
+< 	do_each_pid_task(pgrp, PIDTYPE_PGID, p)
+< 	{
+---
+> 	do_each_pid_task(pgrp, PIDTYPE_PGID, p) {
+283,284c282
+< 	}
+< 	while_each_pid_task(pgrp, PIDTYPE_PGID, p);
+---
+> 	} while_each_pid_task(pgrp, PIDTYPE_PGID, p);
+304,305c302
+< 	do_each_pid_task(pgrp, PIDTYPE_PGID, p)
+< 	{
+---
+> 	do_each_pid_task(pgrp, PIDTYPE_PGID, p) {
+308,309c305
+< 	}
+< 	while_each_pid_task(pgrp, PIDTYPE_PGID, p);
+---
+> 	} while_each_pid_task(pgrp, PIDTYPE_PGID, p);
+319,320c315,316
+< static void kill_orphaned_pgrp(struct task_struct *tsk,
+< 			       struct task_struct *parent)
+---
+> static void
+> kill_orphaned_pgrp(struct task_struct *tsk, struct task_struct *parent)
+374c370
+< 	list_for_each_entry (c, &p->children, sibling) {
+---
+> 	list_for_each_entry(c, &p->children, sibling) {
+382c378
+< 	list_for_each_entry (c, &p->real_parent->children, sibling) {
+---
+> 	list_for_each_entry(c, &p->real_parent->children, sibling) {
+390c386
+< 	for_each_process (g) {
+---
+> 	for_each_process(g) {
+393c389
+< 		for_each_thread (g, c) {
+---
+> 		for_each_thread(g, c) {
+496c492
+< 	for_each_thread (p, t) {
+---
+> 	for_each_thread(p, t) {
+504,505c500,502
+< 					     struct list_head *dead)
+< 	__releases(&tasklist_lock) __acquires(&tasklist_lock)
+---
+> 						struct list_head *dead)
+> 	__releases(&tasklist_lock)
+> 	__acquires(&tasklist_lock)
+522c519
+< 	list_for_each_entry_safe (p, n, dead, ptrace_entry) {
+---
+> 	list_for_each_entry_safe(p, n, dead, ptrace_entry) {
+579c576
+< 			    struct list_head *dead)
+---
+> 				struct list_head *dead)
+588,589c585,586
+< 	if (!p->ptrace && p->exit_state == EXIT_ZOMBIE &&
+< 	    thread_group_empty(p)) {
+---
+> 	if (!p->ptrace &&
+> 	    p->exit_state == EXIT_ZOMBIE && thread_group_empty(p)) {
+608c605
+< 				   struct list_head *dead)
+---
+> 					struct list_head *dead)
+621,622c618,619
+< 	list_for_each_entry (p, &father->children, sibling) {
+< 		for_each_thread (p, t) {
+---
+> 	list_for_each_entry(p, &father->children, sibling) {
+> 		for_each_thread(p, t) {
+624,625c621
+< 			BUG_ON((!t->ptrace) !=
+< 			       (rcu_access_pointer(t->parent) == father));
+---
+> 			BUG_ON((!t->ptrace) != (rcu_access_pointer(t->parent) == father));
+661,664c657,660
+< 		int sig = thread_group_leader(tsk) && thread_group_empty(tsk) &&
+< 					  !ptrace_reparented(tsk) ?
+< 					tsk->exit_signal :
+< 					SIGCHLD;
+---
+> 		int sig = thread_group_leader(tsk) &&
+> 				thread_group_empty(tsk) &&
+> 				!ptrace_reparented(tsk) ?
+> 			tsk->exit_signal : SIGCHLD;
+668c664
+< 			   do_notify_parent(tsk, tsk->exit_signal);
+---
+> 			do_notify_parent(tsk, tsk->exit_signal);
+683c679
+< 	list_for_each_entry_safe (p, n, &dead, ptrace_entry) {
+---
+> 	list_for_each_entry_safe(p, n, &dead, ptrace_entry) {
+710,712c706
+< static inline void check_stack_usage(void)
+< {
+< }
+---
+> static inline void check_stack_usage(void) {}
+745c739,740
+< 			current->comm, task_pid_nr(current), preempt_count());
+---
+> 			current->comm, task_pid_nr(current),
+> 			preempt_count());
+767c762
+< 	exit_signals(tsk); /* sets PF_EXITING */
+---
+> 	exit_signals(tsk);  /* sets PF_EXITING */
+781c776
+< 			      tsk->signal->group_exit_code ?: (int)code);
+---
+> 				tsk->signal->group_exit_code ?: (int)code);
+877c872
+< 	do_exit((error_code & 0xff) << 8);
+---
+> 	do_exit((error_code&0xff)<<8);
+884c879,880
+< void do_group_exit(int exit_code)
+---
+> void
+> do_group_exit(int exit_code)
+906,914d901
+< 	//pfork and active
+< 	//pfork who
+< 	//stand by get_task_by_pid
+< 	//kill_pid(,SIGCONTINUE,1)
+< 	//check send_sig
+< 	if (current->who == 1) {
+< 	struct pid *temp = find_vpid(current->pfork_standby_pid);
+< 		kill_pid(temp, SIGCONT, 1);
+< 	}
+940,946c927,933
+< 	enum pid_type wo_type;
+< 	int wo_flags;
+< 	struct pid *wo_pid;
+< 
+< 	struct waitid_info *wo_info;
+< 	int wo_stat;
+< 	struct rusage *wo_rusage;
+---
+> 	enum pid_type		wo_type;
+> 	int			wo_flags;
+> 	struct pid		*wo_pid;
+> 
+> 	struct waitid_info	*wo_info;
+> 	int			wo_stat;
+> 	struct rusage		*wo_rusage;
+948,949c935,936
+< 	wait_queue_entry_t child_wait;
+< 	int notask_error;
+---
+> 	wait_queue_entry_t		child_wait;
+> 	int			notask_error;
+954,955c941,942
+< 	return wo->wo_type == PIDTYPE_MAX ||
+< 	       task_pid_type(p, wo->wo_type) == wo->wo_pid;
+---
+> 	return	wo->wo_type == PIDTYPE_MAX ||
+> 		task_pid_type(p, wo->wo_type) == wo->wo_pid;
+958,959c945,946
+< static int eligible_child(struct wait_opts *wo, bool ptrace,
+< 			  struct task_struct *p)
+---
+> static int
+> eligible_child(struct wait_opts *wo, bool ptrace, struct task_struct *p)
+1014,1015c1001,1002
+< 	state = (ptrace_reparented(p) && thread_group_leader(p)) ? EXIT_TRACE :
+< 									 EXIT_DEAD;
+---
+> 	state = (ptrace_reparented(p) && thread_group_leader(p)) ?
+> 		EXIT_TRACE : EXIT_DEAD;
+1059,1062c1046,1053
+< 		psig->cmin_flt += p->min_flt + sig->min_flt + sig->cmin_flt;
+< 		psig->cmaj_flt += p->maj_flt + sig->maj_flt + sig->cmaj_flt;
+< 		psig->cnvcsw += p->nvcsw + sig->nvcsw + sig->cnvcsw;
+< 		psig->cnivcsw += p->nivcsw + sig->nivcsw + sig->cnivcsw;
+---
+> 		psig->cmin_flt +=
+> 			p->min_flt + sig->min_flt + sig->cmin_flt;
+> 		psig->cmaj_flt +=
+> 			p->maj_flt + sig->maj_flt + sig->cmaj_flt;
+> 		psig->cnvcsw +=
+> 			p->nvcsw + sig->nvcsw + sig->cnvcsw;
+> 		psig->cnivcsw +=
+> 			p->nivcsw + sig->nivcsw + sig->cnivcsw;
+1064c1055,1056
+< 			task_io_get_inblock(p) + sig->inblock + sig->cinblock;
+---
+> 			task_io_get_inblock(p) +
+> 			sig->inblock + sig->cinblock;
+1066c1058,1059
+< 			task_io_get_oublock(p) + sig->oublock + sig->coublock;
+---
+> 			task_io_get_oublock(p) +
+> 			sig->oublock + sig->coublock;
+1078,1080c1071,1072
+< 	status = (p->signal->flags & SIGNAL_GROUP_EXIT) ?
+< 			       p->signal->group_exit_code :
+< 			       p->exit_code;
+---
+> 	status = (p->signal->flags & SIGNAL_GROUP_EXIT)
+> 		? p->signal->group_exit_code : p->exit_code;
+1105,1106c1097
+< 			infop->cause =
+< 				(status & 0x80) ? CLD_DUMPED : CLD_KILLED;
+---
+> 			infop->cause = (status & 0x80) ? CLD_DUMPED : CLD_KILLED;
+1146,1147c1137,1138
+< static int wait_task_stopped(struct wait_opts *wo, int ptrace,
+< 			     struct task_struct *p)
+---
+> static int wait_task_stopped(struct wait_opts *wo,
+> 				int ptrace, struct task_struct *p)
+1271c1262
+< 			      struct task_struct *p)
+---
+> 				struct task_struct *p)
+1386c1377
+< 	list_for_each_entry (p, &tsk->children, sibling) {
+---
+> 	list_for_each_entry(p, &tsk->children, sibling) {
+1400c1391
+< 	list_for_each_entry (p, &tsk->ptraced, ptrace_entry) {
+---
+> 	list_for_each_entry(p, &tsk->ptraced, ptrace_entry) {
+1411c1402
+< 			       int sync, void *key)
+---
+> 				int sync, void *key)
+1413c1404,1405
+< 	struct wait_opts *wo = container_of(wait, struct wait_opts, child_wait);
+---
+> 	struct wait_opts *wo = container_of(wait, struct wait_opts,
+> 						child_wait);
+1427,1428c1419,1420
+< 	__wake_up_sync_key(&parent->signal->wait_chldexit, TASK_INTERRUPTIBLE,
+< 			   p);
+---
+> 	__wake_up_sync_key(&parent->signal->wait_chldexit,
+> 			   TASK_INTERRUPTIBLE, p);
+1450c1442
+< 	    (!wo->wo_pid || !pid_has_task(wo->wo_pid, wo->wo_type)))
+---
+> 	   (!wo->wo_pid || !pid_has_task(wo->wo_pid, wo->wo_type)))
+1467,1468c1459
+< 	}
+< 	while_each_thread(current, tsk);
+---
+> 	} while_each_thread(current, tsk);
+1511,1512c1502,1503
+< 	if (options & ~(WNOHANG | WNOWAIT | WEXITED | WSTOPPED | WCONTINUED |
+< 			__WNOTHREAD | __WCLONE | __WALL))
+---
+> 	if (options & ~(WNOHANG|WNOWAIT|WEXITED|WSTOPPED|WCONTINUED|
+> 			__WNOTHREAD|__WCLONE|__WALL))
+1514c1505
+< 	if (!(options & (WEXITED | WSTOPPED | WCONTINUED)))
+---
+> 	if (!(options & (WEXITED|WSTOPPED|WCONTINUED)))
+1551,1555c1542,1546
+< 	wo.wo_type = type;
+< 	wo.wo_pid = pid;
+< 	wo.wo_flags = options;
+< 	wo.wo_info = infop;
+< 	wo.wo_rusage = ru;
+---
+> 	wo.wo_type	= type;
+> 	wo.wo_pid	= pid;
+> 	wo.wo_flags	= options;
+> 	wo.wo_info	= infop;
+> 	wo.wo_rusage	= ru;
+1562,1563c1553,1554
+< SYSCALL_DEFINE5(waitid, int, which, pid_t, upid, struct siginfo __user *, infop,
+< 		int, options, struct rusage __user *, ru)
+---
+> SYSCALL_DEFINE5(waitid, int, which, pid_t, upid, struct siginfo __user *,
+> 		infop, int, options, struct rusage __user *, ru)
+1566c1557
+< 	struct waitid_info info = { .status = 0 };
+---
+> 	struct waitid_info info = {.status = 0};
+1603,1604c1594,1595
+< 	if (options & ~(WNOHANG | WUNTRACED | WCONTINUED | __WNOTHREAD |
+< 			__WCLONE | __WALL))
+---
+> 	if (options & ~(WNOHANG|WUNTRACED|WCONTINUED|
+> 			__WNOTHREAD|__WCLONE|__WALL))
+1624,1629c1615,1620
+< 	wo.wo_type = type;
+< 	wo.wo_pid = pid;
+< 	wo.wo_flags = options | WEXITED;
+< 	wo.wo_info = NULL;
+< 	wo.wo_stat = 0;
+< 	wo.wo_rusage = ru;
+---
+> 	wo.wo_type	= type;
+> 	wo.wo_pid	= pid;
+> 	wo.wo_flags	= options | WEXITED;
+> 	wo.wo_info	= NULL;
+> 	wo.wo_stat	= 0;
+> 	wo.wo_rusage	= ru;
+1641,1643c1632,1634
+< 		.wo_type = PIDTYPE_PID,
+< 		.wo_pid = find_get_pid(pid),
+< 		.wo_flags = WEXITED,
+---
+> 		.wo_type	= PIDTYPE_PID,
+> 		.wo_pid		= find_get_pid(pid),
+> 		.wo_flags	= WEXITED,
+1654,1655c1645,1646
+< SYSCALL_DEFINE4(wait4, pid_t, upid, int __user *, stat_addr, int, options,
+< 		struct rusage __user *, ru)
+---
+> SYSCALL_DEFINE4(wait4, pid_t, upid, int __user *, stat_addr,
+> 		int, options, struct rusage __user *, ru)
+1681,1683c1672,1676
+< COMPAT_SYSCALL_DEFINE4(wait4, compat_pid_t, pid, compat_uint_t __user *,
+< 		       stat_addr, int, options, struct compat_rusage __user *,
+< 		       ru)
+---
+> COMPAT_SYSCALL_DEFINE4(wait4,
+> 	compat_pid_t, pid,
+> 	compat_uint_t __user *, stat_addr,
+> 	int, options,
+> 	struct compat_rusage __user *, ru)
+1694,1696c1687,1690
+< COMPAT_SYSCALL_DEFINE5(waitid, int, which, compat_pid_t, pid,
+< 		       struct compat_siginfo __user *, infop, int, options,
+< 		       struct compat_rusage __user *, uru)
+---
+> COMPAT_SYSCALL_DEFINE5(waitid,
+> 		int, which, compat_pid_t, pid,
+> 		struct compat_siginfo __user *, infop, int, options,
+> 		struct compat_rusage __user *, uru)
+1699c1693
+< 	struct waitid_info info = { .status = 0 };
+---
+> 	struct waitid_info info = {.status = 0};
+1753c1747
+< 		 (READ_ONCE(task->exit_state) && thread_group_empty(task));
+---
+> 		(READ_ONCE(task->exit_state) && thread_group_empty(task));

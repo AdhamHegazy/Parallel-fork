@@ -1,0 +1,6 @@
+364,368d363
+< 440	64	pfork			sys_pfork
+< 441	64	pfork_who		sys_pfork_who
+< 442	64	get_pfork_sibling_pid	sys_get_pfork_sibling_pid
+< 443	64	get_pfork_status	sys_get_pfork_status
+< 444	64	set_pfork_status	sys_set_pfork_status

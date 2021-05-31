@@ -1,0 +1,1208 @@
+106,118c106,118
+< #define __MAP0(m,...)
+< #define __MAP1(m,t,a,...) m(t,a)
+< #define __MAP2(m,t,a,...) m(t,a), __MAP1(m,__VA_ARGS__)
+< #define __MAP3(m,t,a,...) m(t,a), __MAP2(m,__VA_ARGS__)
+< #define __MAP4(m,t,a,...) m(t,a), __MAP3(m,__VA_ARGS__)
+< #define __MAP5(m,t,a,...) m(t,a), __MAP4(m,__VA_ARGS__)
+< #define __MAP6(m,t,a,...) m(t,a), __MAP5(m,__VA_ARGS__)
+< #define __MAP(n,...) __MAP##n(__VA_ARGS__)
+< 
+< #define __SC_DECL(t, a)	t a
+< #define __TYPE_AS(t, v)	__same_type((__force t)0, v)
+< #define __TYPE_IS_L(t)	(__TYPE_AS(t, 0L))
+< #define __TYPE_IS_UL(t)	(__TYPE_AS(t, 0UL))
+---
+> #define __MAP0(m, ...)
+> #define __MAP1(m, t, a, ...) m(t, a)
+> #define __MAP2(m, t, a, ...) m(t, a), __MAP1(m, __VA_ARGS__)
+> #define __MAP3(m, t, a, ...) m(t, a), __MAP2(m, __VA_ARGS__)
+> #define __MAP4(m, t, a, ...) m(t, a), __MAP3(m, __VA_ARGS__)
+> #define __MAP5(m, t, a, ...) m(t, a), __MAP4(m, __VA_ARGS__)
+> #define __MAP6(m, t, a, ...) m(t, a), __MAP5(m, __VA_ARGS__)
+> #define __MAP(n, ...) __MAP##n(__VA_ARGS__)
+> 
+> #define __SC_DECL(t, a) t a
+> #define __TYPE_AS(t, v) __same_type((__force t)0, v)
+> #define __TYPE_IS_L(t) (__TYPE_AS(t, 0L))
+> #define __TYPE_IS_UL(t) (__TYPE_AS(t, 0UL))
+120,123c120,125
+< #define __SC_LONG(t, a) __typeof(__builtin_choose_expr(__TYPE_IS_LL(t), 0LL, 0L)) a
+< #define __SC_CAST(t, a)	(__force t) a
+< #define __SC_ARGS(t, a)	a
+< #define __SC_TEST(t, a) (void)BUILD_BUG_ON_ZERO(!__TYPE_IS_LL(t) && sizeof(t) > sizeof(long))
+---
+> #define __SC_LONG(t, a)                                                        \
+> 	__typeof(__builtin_choose_expr(__TYPE_IS_LL(t), 0LL, 0L)) a
+> #define __SC_CAST(t, a) (__force t) a
+> #define __SC_ARGS(t, a) a
+> #define __SC_TEST(t, a)                                                        \
+> 	(void)BUILD_BUG_ON_ZERO(!__TYPE_IS_LL(t) && sizeof(t) > sizeof(long))
+126,127c128,129
+< #define __SC_STR_ADECL(t, a)	#a
+< #define __SC_STR_TDECL(t, a)	#t
+---
+> #define __SC_STR_ADECL(t, a) #a
+> #define __SC_STR_TDECL(t, a) #t
+134,188c136,186
+< #define SYSCALL_TRACE_ENTER_EVENT(sname)				\
+< 	static struct syscall_metadata __syscall_meta_##sname;		\
+< 	static struct trace_event_call __used				\
+< 	  event_enter_##sname = {					\
+< 		.class			= &event_class_syscall_enter,	\
+< 		{							\
+< 			.name                   = "sys_enter"#sname,	\
+< 		},							\
+< 		.event.funcs            = &enter_syscall_print_funcs,	\
+< 		.data			= (void *)&__syscall_meta_##sname,\
+< 		.flags                  = TRACE_EVENT_FL_CAP_ANY,	\
+< 	};								\
+< 	static struct trace_event_call __used				\
+< 	  __attribute__((section("_ftrace_events")))			\
+< 	 *__event_enter_##sname = &event_enter_##sname;
+< 
+< #define SYSCALL_TRACE_EXIT_EVENT(sname)					\
+< 	static struct syscall_metadata __syscall_meta_##sname;		\
+< 	static struct trace_event_call __used				\
+< 	  event_exit_##sname = {					\
+< 		.class			= &event_class_syscall_exit,	\
+< 		{							\
+< 			.name                   = "sys_exit"#sname,	\
+< 		},							\
+< 		.event.funcs		= &exit_syscall_print_funcs,	\
+< 		.data			= (void *)&__syscall_meta_##sname,\
+< 		.flags                  = TRACE_EVENT_FL_CAP_ANY,	\
+< 	};								\
+< 	static struct trace_event_call __used				\
+< 	  __attribute__((section("_ftrace_events")))			\
+< 	*__event_exit_##sname = &event_exit_##sname;
+< 
+< #define SYSCALL_METADATA(sname, nb, ...)			\
+< 	static const char *types_##sname[] = {			\
+< 		__MAP(nb,__SC_STR_TDECL,__VA_ARGS__)		\
+< 	};							\
+< 	static const char *args_##sname[] = {			\
+< 		__MAP(nb,__SC_STR_ADECL,__VA_ARGS__)		\
+< 	};							\
+< 	SYSCALL_TRACE_ENTER_EVENT(sname);			\
+< 	SYSCALL_TRACE_EXIT_EVENT(sname);			\
+< 	static struct syscall_metadata __used			\
+< 	  __syscall_meta_##sname = {				\
+< 		.name 		= "sys"#sname,			\
+< 		.syscall_nr	= -1,	/* Filled in at boot */	\
+< 		.nb_args 	= nb,				\
+< 		.types		= nb ? types_##sname : NULL,	\
+< 		.args		= nb ? args_##sname : NULL,	\
+< 		.enter_event	= &event_enter_##sname,		\
+< 		.exit_event	= &event_exit_##sname,		\
+< 		.enter_fields	= LIST_HEAD_INIT(__syscall_meta_##sname.enter_fields), \
+< 	};							\
+< 	static struct syscall_metadata __used			\
+< 	  __attribute__((section("__syscalls_metadata")))	\
+< 	 *__p_syscall_meta_##sname = &__syscall_meta_##sname;
+---
+> #define SYSCALL_TRACE_ENTER_EVENT(sname)                                       \
+> 	static struct syscall_metadata __syscall_meta_##sname;                 \
+> 	static struct trace_event_call __used event_enter_##sname = {          \
+> 		.class = &event_class_syscall_enter,                           \
+> 		{                                                              \
+> 			.name = "sys_enter" #sname,                            \
+> 		},                                                             \
+> 		.event.funcs = &enter_syscall_print_funcs,                     \
+> 		.data = (void *)&__syscall_meta_##sname,                       \
+> 		.flags = TRACE_EVENT_FL_CAP_ANY,                               \
+> 	};                                                                     \
+> 	static struct trace_event_call __used __attribute__(                   \
+> 		(section("_ftrace_events"))) *__event_enter_##sname =          \
+> 		&event_enter_##sname;
+> 
+> #define SYSCALL_TRACE_EXIT_EVENT(sname)                                        \
+> 	static struct syscall_metadata __syscall_meta_##sname;                 \
+> 	static struct trace_event_call __used event_exit_##sname = {           \
+> 		.class = &event_class_syscall_exit,                            \
+> 		{                                                              \
+> 			.name = "sys_exit" #sname,                             \
+> 		},                                                             \
+> 		.event.funcs = &exit_syscall_print_funcs,                      \
+> 		.data = (void *)&__syscall_meta_##sname,                       \
+> 		.flags = TRACE_EVENT_FL_CAP_ANY,                               \
+> 	};                                                                     \
+> 	static struct trace_event_call __used __attribute__(                   \
+> 		(section("_ftrace_events"))) *__event_exit_##sname =           \
+> 		&event_exit_##sname;
+> 
+> #define SYSCALL_METADATA(sname, nb, ...)                                       \
+> 	static const char *types_##sname[] = { __MAP(nb, __SC_STR_TDECL,       \
+> 						     __VA_ARGS__) };           \
+> 	static const char *args_##sname[] = { __MAP(nb, __SC_STR_ADECL,        \
+> 						    __VA_ARGS__) };            \
+> 	SYSCALL_TRACE_ENTER_EVENT(sname);                                      \
+> 	SYSCALL_TRACE_EXIT_EVENT(sname);                                       \
+> 	static struct syscall_metadata __used __syscall_meta_##sname = {       \
+> 		.name = "sys" #sname,                                          \
+> 		.syscall_nr = -1, /* Filled in at boot */                      \
+> 		.nb_args = nb,                                                 \
+> 		.types = nb ? types_##sname : NULL,                            \
+> 		.args = nb ? args_##sname : NULL,                              \
+> 		.enter_event = &event_enter_##sname,                           \
+> 		.exit_event = &event_exit_##sname,                             \
+> 		.enter_fields =                                                \
+> 			LIST_HEAD_INIT(__syscall_meta_##sname.enter_fields),   \
+> 	};                                                                     \
+> 	static struct syscall_metadata __used __attribute__(                   \
+> 		(section("__syscalls_metadata"))) *__p_syscall_meta_##sname =  \
+> 		&__syscall_meta_##sname;
+206,209c204,207
+< #define SYSCALL_DEFINE0(sname)					\
+< 	SYSCALL_METADATA(_##sname, 0);				\
+< 	asmlinkage long sys_##sname(void);			\
+< 	ALLOW_ERROR_INJECTION(sys_##sname, ERRNO);		\
+---
+> #define SYSCALL_DEFINE0(sname)                                                 \
+> 	SYSCALL_METADATA(_##sname, 0);                                         \
+> 	asmlinkage long sys_##sname(void);                                     \
+> 	ALLOW_ERROR_INJECTION(sys_##sname, ERRNO);                             \
+220c218
+< #define SYSCALL_DEFINE_MAXARGS	6
+---
+> #define SYSCALL_DEFINE_MAXARGS 6
+222,223c220,221
+< #define SYSCALL_DEFINEx(x, sname, ...)				\
+< 	SYSCALL_METADATA(sname, x, __VA_ARGS__)			\
+---
+> #define SYSCALL_DEFINEx(x, sname, ...)                                         \
+> 	SYSCALL_METADATA(sname, x, __VA_ARGS__)                                \
+234,251c232,249
+< #define __SYSCALL_DEFINEx(x, name, ...)					\
+< 	__diag_push();							\
+< 	__diag_ignore(GCC, 8, "-Wattribute-alias",			\
+< 		      "Type aliasing is used to sanitize syscall arguments");\
+< 	asmlinkage long sys##name(__MAP(x,__SC_DECL,__VA_ARGS__))	\
+< 		__attribute__((alias(__stringify(__se_sys##name))));	\
+< 	ALLOW_ERROR_INJECTION(sys##name, ERRNO);			\
+< 	static inline long __do_sys##name(__MAP(x,__SC_DECL,__VA_ARGS__));\
+< 	asmlinkage long __se_sys##name(__MAP(x,__SC_LONG,__VA_ARGS__));	\
+< 	asmlinkage long __se_sys##name(__MAP(x,__SC_LONG,__VA_ARGS__))	\
+< 	{								\
+< 		long ret = __do_sys##name(__MAP(x,__SC_CAST,__VA_ARGS__));\
+< 		__MAP(x,__SC_TEST,__VA_ARGS__);				\
+< 		__PROTECT(x, ret,__MAP(x,__SC_ARGS,__VA_ARGS__));	\
+< 		return ret;						\
+< 	}								\
+< 	__diag_pop();							\
+< 	static inline long __do_sys##name(__MAP(x,__SC_DECL,__VA_ARGS__))
+---
+> #define __SYSCALL_DEFINEx(x, name, ...)                                        \
+> 	__diag_push();                                                         \
+> 	__diag_ignore(GCC, 8, "-Wattribute-alias",                             \
+> 		      "Type aliasing is used to sanitize syscall arguments");  \
+> 	asmlinkage long sys##name(__MAP(x, __SC_DECL, __VA_ARGS__))            \
+> 		__attribute__((alias(__stringify(__se_sys##name))));           \
+> 	ALLOW_ERROR_INJECTION(sys##name, ERRNO);                               \
+> 	static inline long __do_sys##name(__MAP(x, __SC_DECL, __VA_ARGS__));   \
+> 	asmlinkage long __se_sys##name(__MAP(x, __SC_LONG, __VA_ARGS__));      \
+> 	asmlinkage long __se_sys##name(__MAP(x, __SC_LONG, __VA_ARGS__))       \
+> 	{                                                                      \
+> 		long ret = __do_sys##name(__MAP(x, __SC_CAST, __VA_ARGS__));   \
+> 		__MAP(x, __SC_TEST, __VA_ARGS__);                              \
+> 		__PROTECT(x, ret, __MAP(x, __SC_ARGS, __VA_ARGS__));           \
+> 		return ret;                                                    \
+> 	}                                                                      \
+> 	__diag_pop();                                                          \
+> 	static inline long __do_sys##name(__MAP(x, __SC_DECL, __VA_ARGS__))
+291c289
+< 			struct iocb __user * __user *);
+---
+> 			      struct iocb __user *__user *);
+294,315c292,306
+< asmlinkage long sys_io_getevents(aio_context_t ctx_id,
+< 				long min_nr,
+< 				long nr,
+< 				struct io_event __user *events,
+< 				struct __kernel_timespec __user *timeout);
+< asmlinkage long sys_io_getevents_time32(__u32 ctx_id,
+< 				__s32 min_nr,
+< 				__s32 nr,
+< 				struct io_event __user *events,
+< 				struct old_timespec32 __user *timeout);
+< asmlinkage long sys_io_pgetevents(aio_context_t ctx_id,
+< 				long min_nr,
+< 				long nr,
+< 				struct io_event __user *events,
+< 				struct __kernel_timespec __user *timeout,
+< 				const struct __aio_sigset *sig);
+< asmlinkage long sys_io_pgetevents_time32(aio_context_t ctx_id,
+< 				long min_nr,
+< 				long nr,
+< 				struct io_event __user *events,
+< 				struct old_timespec32 __user *timeout,
+< 				const struct __aio_sigset *sig);
+---
+> asmlinkage long sys_io_getevents(aio_context_t ctx_id, long min_nr, long nr,
+> 				 struct io_event __user *events,
+> 				 struct __kernel_timespec __user *timeout);
+> asmlinkage long sys_io_getevents_time32(__u32 ctx_id, __s32 min_nr, __s32 nr,
+> 					struct io_event __user *events,
+> 					struct old_timespec32 __user *timeout);
+> asmlinkage long sys_io_pgetevents(aio_context_t ctx_id, long min_nr, long nr,
+> 				  struct io_event __user *events,
+> 				  struct __kernel_timespec __user *timeout,
+> 				  const struct __aio_sigset *sig);
+> asmlinkage long sys_io_pgetevents_time32(aio_context_t ctx_id, long min_nr,
+> 					 long nr,
+> 					 struct io_event __user *events,
+> 					 struct old_timespec32 __user *timeout,
+> 					 const struct __aio_sigset *sig);
+317c308
+< 				struct io_uring_params __user *p);
+---
+> 				   struct io_uring_params __user *p);
+319,320c310,311
+< 				u32 min_complete, u32 flags,
+< 				const sigset_t __user *sig, size_t sigsz);
+---
+> 				   u32 min_complete, u32 flags,
+> 				   const sigset_t __user *sig, size_t sigsz);
+322c313
+< 				void __user *arg, unsigned int nr_args);
+---
+> 				      void __user *arg, unsigned int nr_args);
+360c351
+< 				struct epoll_event __user *event);
+---
+> 			      struct epoll_event __user *event);
+371,372c362,363
+< asmlinkage long sys_fcntl64(unsigned int fd,
+< 				unsigned int cmd, unsigned long arg);
+---
+> asmlinkage long sys_fcntl64(unsigned int fd, unsigned int cmd,
+> 			    unsigned long arg);
+378c369
+< 					u32 mask);
+---
+> 				      u32 mask);
+382,383c373
+< asmlinkage long sys_ioctl(unsigned int fd, unsigned int cmd,
+< 				unsigned long arg);
+---
+> asmlinkage long sys_ioctl(unsigned int fd, unsigned int cmd, unsigned long arg);
+393c383
+< asmlinkage long sys_mknodat(int dfd, const char __user * filename, umode_t mode,
+---
+> asmlinkage long sys_mknodat(int dfd, const char __user *filename, umode_t mode,
+395,402c385,392
+< asmlinkage long sys_mkdirat(int dfd, const char __user * pathname, umode_t mode);
+< asmlinkage long sys_unlinkat(int dfd, const char __user * pathname, int flag);
+< asmlinkage long sys_symlinkat(const char __user * oldname,
+< 			      int newdfd, const char __user * newname);
+< asmlinkage long sys_linkat(int olddfd, const char __user *oldname,
+< 			   int newdfd, const char __user *newname, int flags);
+< asmlinkage long sys_renameat(int olddfd, const char __user * oldname,
+< 			     int newdfd, const char __user * newname);
+---
+> asmlinkage long sys_mkdirat(int dfd, const char __user *pathname, umode_t mode);
+> asmlinkage long sys_unlinkat(int dfd, const char __user *pathname, int flag);
+> asmlinkage long sys_symlinkat(const char __user *oldname, int newdfd,
+> 			      const char __user *newname);
+> asmlinkage long sys_linkat(int olddfd, const char __user *oldname, int newdfd,
+> 			   const char __user *newname, int flags);
+> asmlinkage long sys_renameat(int olddfd, const char __user *oldname, int newdfd,
+> 			     const char __user *newname);
+407,408c397,398
+< 				char __user *type, unsigned long flags,
+< 				void __user *data);
+---
+> 			  char __user *type, unsigned long flags,
+> 			  void __user *data);
+410c400
+< 				const char __user *put_old);
+---
+> 			       const char __user *put_old);
+415,416c405
+< asmlinkage long sys_statfs(const char __user * path,
+< 				struct statfs __user *buf);
+---
+> asmlinkage long sys_statfs(const char __user *path, struct statfs __user *buf);
+418c407
+< 				struct statfs64 __user *buf);
+---
+> 			     struct statfs64 __user *buf);
+421c410
+< 				struct statfs64 __user *buf);
+---
+> 			      struct statfs64 __user *buf);
+436c425
+< asmlinkage long sys_fchmodat(int dfd, const char __user * filename,
+---
+> asmlinkage long sys_fchmodat(int dfd, const char __user *filename,
+455c444
+< 				qid_t id, void __user *addr);
+---
+> 			     qid_t id, void __user *addr);
+459,460c448,449
+< 				struct linux_dirent64 __user *dirent,
+< 				unsigned int count);
+---
+> 			       struct linux_dirent64 __user *dirent,
+> 			       unsigned int count);
+464,467c453,455
+< 			unsigned long offset_low, loff_t __user *result,
+< 			unsigned int whence);
+< asmlinkage long sys_lseek(unsigned int fd, off_t offset,
+< 			  unsigned int whence);
+---
+> 			   unsigned long offset_low, loff_t __user *result,
+> 			   unsigned int whence);
+> asmlinkage long sys_lseek(unsigned int fd, off_t offset, unsigned int whence);
+471,472c459
+< asmlinkage long sys_readv(unsigned long fd,
+< 			  const struct iovec __user *vec,
+---
+> asmlinkage long sys_readv(unsigned long fd, const struct iovec __user *vec,
+474,475c461
+< asmlinkage long sys_writev(unsigned long fd,
+< 			   const struct iovec __user *vec,
+---
+> asmlinkage long sys_writev(unsigned long fd, const struct iovec __user *vec,
+477,478c463,464
+< asmlinkage long sys_pread64(unsigned int fd, char __user *buf,
+< 			    size_t count, loff_t pos);
+---
+> asmlinkage long sys_pread64(unsigned int fd, char __user *buf, size_t count,
+> 			    loff_t pos);
+482c468,469
+< 			   unsigned long vlen, unsigned long pos_l, unsigned long pos_h);
+---
+> 			   unsigned long vlen, unsigned long pos_l,
+> 			   unsigned long pos_h);
+484c471,472
+< 			    unsigned long vlen, unsigned long pos_l, unsigned long pos_h);
+---
+> 			    unsigned long vlen, unsigned long pos_l,
+> 			    unsigned long pos_h);
+487,488c475,476
+< asmlinkage long sys_sendfile64(int out_fd, int in_fd,
+< 			       loff_t __user *offset, size_t count);
+---
+> asmlinkage long sys_sendfile64(int out_fd, int in_fd, loff_t __user *offset,
+> 			       size_t count);
+495,496c483,485
+< 			     fd_set __user *, struct old_timespec32 __user *,
+< 			     void __user *);
+---
+> 				    fd_set __user *,
+> 				    struct old_timespec32 __user *,
+> 				    void __user *);
+498,499c487,488
+< 			  struct __kernel_timespec __user *, const sigset_t __user *,
+< 			  size_t);
+---
+> 			  struct __kernel_timespec __user *,
+> 			  const sigset_t __user *, size_t);
+501,502c490,491
+< 			  struct old_timespec32 __user *, const sigset_t __user *,
+< 			  size_t);
+---
+> 				 struct old_timespec32 __user *,
+> 				 const sigset_t __user *, size_t);
+505c494,495
+< asmlinkage long sys_signalfd4(int ufd, sigset_t __user *user_mask, size_t sizemask, int flags);
+---
+> asmlinkage long sys_signalfd4(int ufd, sigset_t __user *user_mask,
+> 			      size_t sizemask, int flags);
+510,512c500,502
+< asmlinkage long sys_splice(int fd_in, loff_t __user *off_in,
+< 			   int fd_out, loff_t __user *off_out,
+< 			   size_t len, unsigned int flags);
+---
+> asmlinkage long sys_splice(int fd_in, loff_t __user *off_in, int fd_out,
+> 			   loff_t __user *off_out, size_t len,
+> 			   unsigned int flags);
+516,517c506,507
+< asmlinkage long sys_readlinkat(int dfd, const char __user *path, char __user *buf,
+< 			       int bufsiz);
+---
+> asmlinkage long sys_readlinkat(int dfd, const char __user *path,
+> 			       char __user *buf, int bufsiz);
+524c514
+< 			       struct stat64 __user *statbuf, int flag);
+---
+> 			      struct stat64 __user *statbuf, int flag);
+531,532c521,522
+< asmlinkage long sys_sync_file_range2(int fd, unsigned int flags,
+< 				     loff_t offset, loff_t nbytes);
+---
+> asmlinkage long sys_sync_file_range2(int fd, unsigned int flags, loff_t offset,
+> 				     loff_t nbytes);
+534c524
+< 					unsigned int flags);
+---
+> 				    unsigned int flags);
+538,539c528,532
+< asmlinkage long sys_timerfd_settime(int ufd, int flags,
+< 				    const struct __kernel_itimerspec __user *utmr,
+---
+> asmlinkage long
+> sys_timerfd_settime(int ufd, int flags,
+> 		    const struct __kernel_itimerspec __user *utmr,
+> 		    struct __kernel_itimerspec __user *otmr);
+> asmlinkage long sys_timerfd_gettime(int ufd,
+541d533
+< asmlinkage long sys_timerfd_gettime(int ufd, struct __kernel_itimerspec __user *otmr);
+543,546c535,539
+< 				   struct old_itimerspec32 __user *otmr);
+< asmlinkage long sys_timerfd_settime32(int ufd, int flags,
+< 				   const struct old_itimerspec32 __user *utmr,
+< 				   struct old_itimerspec32 __user *otmr);
+---
+> 				      struct old_itimerspec32 __user *otmr);
+> asmlinkage long
+> sys_timerfd_settime32(int ufd, int flags,
+> 		      const struct old_itimerspec32 __user *utmr,
+> 		      struct old_itimerspec32 __user *otmr);
+550,551c543,544
+< 				struct __kernel_timespec __user *utimes,
+< 				int flags);
+---
+> 			      struct __kernel_timespec __user *utimes,
+> 			      int flags);
+553,554c546,548
+< 				const char __user *filename,
+< 				struct old_timespec32 __user *t, int flags);
+---
+> 				     const char __user *filename,
+> 				     struct old_timespec32 __user *t,
+> 				     int flags);
+560,561c554
+< asmlinkage long sys_capget(cap_user_header_t header,
+< 				cap_user_data_t dataptr);
+---
+> asmlinkage long sys_capget(cap_user_header_t header, cap_user_data_t dataptr);
+563c556
+< 				const cap_user_data_t data);
+---
+> 			   const cap_user_data_t data);
+571,572c564
+< asmlinkage long sys_waitid(int which, pid_t pid,
+< 			   struct siginfo __user *infop,
+---
+> asmlinkage long sys_waitid(int which, pid_t pid, struct siginfo __user *infop,
+581,582c573,574
+< 			struct __kernel_timespec __user *utime, u32 __user *uaddr2,
+< 			u32 val3);
+---
+> 			  struct __kernel_timespec __user *utime,
+> 			  u32 __user *uaddr2, u32 val3);
+584,588c576,580
+< 			struct old_timespec32 __user *utime, u32 __user *uaddr2,
+< 			u32 val3);
+< asmlinkage long sys_get_robust_list(int pid,
+< 				    struct robust_list_head __user * __user *head_ptr,
+< 				    size_t __user *len_ptr);
+---
+> 				 struct old_timespec32 __user *utime,
+> 				 u32 __user *uaddr2, u32 val3);
+> asmlinkage long
+> sys_get_robust_list(int pid, struct robust_list_head __user *__user *head_ptr,
+> 		    size_t __user *len_ptr);
+599c591,592
+< asmlinkage long sys_getitimer(int which, struct __kernel_old_itimerval __user *value);
+---
+> asmlinkage long sys_getitimer(int which,
+> 			      struct __kernel_old_itimerval __user *value);
+601,602c594,595
+< 				struct __kernel_old_itimerval __user *value,
+< 				struct __kernel_old_itimerval __user *ovalue);
+---
+> 			      struct __kernel_old_itimerval __user *value,
+> 			      struct __kernel_old_itimerval __user *ovalue);
+606,607c599,600
+< 				struct kexec_segment __user *segments,
+< 				unsigned long flags);
+---
+> 			       struct kexec_segment __user *segments,
+> 			       unsigned long flags);
+613c606
+< 				unsigned int flags);
+---
+> 				  unsigned int flags);
+618c611
+< 				 timer_t __user * created_timer_id);
+---
+> 				 timer_t __user *created_timer_id);
+620c613
+< 				struct __kernel_itimerspec __user *setting);
+---
+> 				  struct __kernel_itimerspec __user *setting);
+622,624c615,618
+< asmlinkage long sys_timer_settime(timer_t timer_id, int flags,
+< 				const struct __kernel_itimerspec __user *new_setting,
+< 				struct __kernel_itimerspec __user *old_setting);
+---
+> asmlinkage long
+> sys_timer_settime(timer_t timer_id, int flags,
+> 		  const struct __kernel_itimerspec __user *new_setting,
+> 		  struct __kernel_itimerspec __user *old_setting);
+627c621
+< 				const struct __kernel_timespec __user *tp);
+---
+> 				  const struct __kernel_timespec __user *tp);
+629c623
+< 				struct __kernel_timespec __user *tp);
+---
+> 				  struct __kernel_timespec __user *tp);
+631c625
+< 				struct __kernel_timespec __user *tp);
+---
+> 				 struct __kernel_timespec __user *tp);
+633,634c627,628
+< 				const struct __kernel_timespec __user *rqtp,
+< 				struct __kernel_timespec __user *rmtp);
+---
+> 				    const struct __kernel_timespec __user *rqtp,
+> 				    struct __kernel_timespec __user *rmtp);
+636c630
+< 				 struct old_itimerspec32 __user *setting);
+---
+> 				    struct old_itimerspec32 __user *setting);
+638,639c632,633
+< 					 struct old_itimerspec32 __user *new,
+< 					 struct old_itimerspec32 __user *old);
+---
+> 				    struct old_itimerspec32 __user *new,
+> 				    struct old_itimerspec32 __user *old);
+641c635
+< 				struct old_timespec32 __user *tp);
+---
+> 				    struct old_timespec32 __user *tp);
+643c637
+< 				struct old_timespec32 __user *tp);
+---
+> 				    struct old_timespec32 __user *tp);
+645c639
+< 				struct old_timespec32 __user *tp);
+---
+> 					struct old_timespec32 __user *tp);
+647,648c641,642
+< 				struct old_timespec32 __user *rqtp,
+< 				struct old_timespec32 __user *rmtp);
+---
+> 					   struct old_timespec32 __user *rqtp,
+> 					   struct old_timespec32 __user *rmtp);
+658,659c652
+< asmlinkage long sys_sched_setparam(pid_t pid,
+< 					struct sched_param __user *param);
+---
+> asmlinkage long sys_sched_setparam(pid_t pid, struct sched_param __user *param);
+661c654
+< 					struct sched_param __user *param);
+---
+> 				       struct sched_param __user *param);
+663,664c656
+< asmlinkage long sys_sched_getparam(pid_t pid,
+< 					struct sched_param __user *param);
+---
+> asmlinkage long sys_sched_getparam(pid_t pid, struct sched_param __user *param);
+666c658
+< 					unsigned long __user *user_mask_ptr);
+---
+> 				      unsigned long __user *user_mask_ptr);
+668c660
+< 					unsigned long __user *user_mask_ptr);
+---
+> 				      unsigned long __user *user_mask_ptr);
+672,675c664,668
+< asmlinkage long sys_sched_rr_get_interval(pid_t pid,
+< 				struct __kernel_timespec __user *interval);
+< asmlinkage long sys_sched_rr_get_interval_time32(pid_t pid,
+< 						 struct old_timespec32 __user *interval);
+---
+> asmlinkage long
+> sys_sched_rr_get_interval(pid_t pid, struct __kernel_timespec __user *interval);
+> asmlinkage long
+> sys_sched_rr_get_interval_time32(pid_t pid,
+> 				 struct old_timespec32 __user *interval);
+686,689c679,680
+< asmlinkage long sys_rt_sigaction(int,
+< 				 const struct sigaction __user *,
+< 				 struct sigaction __user *,
+< 				 size_t);
+---
+> asmlinkage long sys_rt_sigaction(int, const struct sigaction __user *,
+> 				 struct sigaction __user *, size_t);
+692c683
+< 				sigset_t __user *oset, size_t sigsetsize);
+---
+> 				   sigset_t __user *oset, size_t sigsetsize);
+695,702c686,693
+< 				siginfo_t __user *uinfo,
+< 				const struct __kernel_timespec __user *uts,
+< 				size_t sigsetsize);
+< asmlinkage long sys_rt_sigtimedwait_time32(const sigset_t __user *uthese,
+< 				siginfo_t __user *uinfo,
+< 				const struct old_timespec32 __user *uts,
+< 				size_t sigsetsize);
+< asmlinkage long sys_rt_sigqueueinfo(pid_t pid, int sig, siginfo_t __user *uinfo);
+---
+> 				    siginfo_t __user *uinfo,
+> 				    const struct __kernel_timespec __user *uts,
+> 				    size_t sigsetsize);
+> asmlinkage long sys_rt_sigtimedwait_time32(
+> 	const sigset_t __user *uthese, siginfo_t __user *uinfo,
+> 	const struct old_timespec32 __user *uts, size_t sigsetsize);
+> asmlinkage long sys_rt_sigqueueinfo(pid_t pid, int sig,
+> 				    siginfo_t __user *uinfo);
+708c699
+< 				void __user *arg);
+---
+> 			   void __user *arg);
+714c705,706
+< asmlinkage long sys_getresuid(uid_t __user *ruid, uid_t __user *euid, uid_t __user *suid);
+---
+> asmlinkage long sys_getresuid(uid_t __user *ruid, uid_t __user *euid,
+> 			      uid_t __user *suid);
+716c708,709
+< asmlinkage long sys_getresgid(gid_t __user *rgid, gid_t __user *egid, gid_t __user *sgid);
+---
+> asmlinkage long sys_getresgid(gid_t __user *rgid, gid_t __user *egid,
+> 			      gid_t __user *sgid);
+730c723
+< 				struct rlimit __user *rlim);
+---
+> 			      struct rlimit __user *rlim);
+732c725
+< 				struct rlimit __user *rlim);
+---
+> 			      struct rlimit __user *rlim);
+736,737c729,731
+< 			unsigned long arg4, unsigned long arg5);
+< asmlinkage long sys_getcpu(unsigned __user *cpu, unsigned __user *node, struct getcpu_cache __user *cache);
+---
+> 			  unsigned long arg4, unsigned long arg5);
+> asmlinkage long sys_getcpu(unsigned __user *cpu, unsigned __user *node,
+> 			   struct getcpu_cache __user *cache);
+741c735
+< 				struct timezone __user *tz);
+---
+> 				 struct timezone __user *tz);
+743c737
+< 				struct timezone __user *tz);
+---
+> 				 struct timezone __user *tz);
+758c752,753
+< asmlinkage long sys_mq_open(const char __user *name, int oflag, umode_t mode, struct mq_attr __user *attr);
+---
+> asmlinkage long sys_mq_open(const char __user *name, int oflag, umode_t mode,
+> 			    struct mq_attr __user *attr);
+760,769c755,774
+< asmlinkage long sys_mq_timedsend(mqd_t mqdes, const char __user *msg_ptr, size_t msg_len, unsigned int msg_prio, const struct __kernel_timespec __user *abs_timeout);
+< asmlinkage long sys_mq_timedreceive(mqd_t mqdes, char __user *msg_ptr, size_t msg_len, unsigned int __user *msg_prio, const struct __kernel_timespec __user *abs_timeout);
+< asmlinkage long sys_mq_notify(mqd_t mqdes, const struct sigevent __user *notification);
+< asmlinkage long sys_mq_getsetattr(mqd_t mqdes, const struct mq_attr __user *mqstat, struct mq_attr __user *omqstat);
+< asmlinkage long sys_mq_timedreceive_time32(mqd_t mqdes,
+< 			char __user *u_msg_ptr,
+< 			unsigned int msg_len, unsigned int __user *u_msg_prio,
+< 			const struct old_timespec32 __user *u_abs_timeout);
+< asmlinkage long sys_mq_timedsend_time32(mqd_t mqdes,
+< 			const char __user *u_msg_ptr,
+---
+> asmlinkage long
+> sys_mq_timedsend(mqd_t mqdes, const char __user *msg_ptr, size_t msg_len,
+> 		 unsigned int msg_prio,
+> 		 const struct __kernel_timespec __user *abs_timeout);
+> asmlinkage long
+> sys_mq_timedreceive(mqd_t mqdes, char __user *msg_ptr, size_t msg_len,
+> 		    unsigned int __user *msg_prio,
+> 		    const struct __kernel_timespec __user *abs_timeout);
+> asmlinkage long sys_mq_notify(mqd_t mqdes,
+> 			      const struct sigevent __user *notification);
+> asmlinkage long sys_mq_getsetattr(mqd_t mqdes,
+> 				  const struct mq_attr __user *mqstat,
+> 				  struct mq_attr __user *omqstat);
+> asmlinkage long
+> sys_mq_timedreceive_time32(mqd_t mqdes, char __user *u_msg_ptr,
+> 			   unsigned int msg_len,
+> 			   unsigned int __user *u_msg_prio,
+> 			   const struct old_timespec32 __user *u_abs_timeout);
+> asmlinkage long
+> sys_mq_timedsend_time32(mqd_t mqdes, const char __user *u_msg_ptr,
+777,780c782,785
+< asmlinkage long sys_msgrcv(int msqid, struct msgbuf __user *msgp,
+< 				size_t msgsz, long msgtyp, int msgflg);
+< asmlinkage long sys_msgsnd(int msqid, struct msgbuf __user *msgp,
+< 				size_t msgsz, int msgflg);
+---
+> asmlinkage long sys_msgrcv(int msqid, struct msgbuf __user *msgp, size_t msgsz,
+> 			   long msgtyp, int msgflg);
+> asmlinkage long sys_msgsnd(int msqid, struct msgbuf __user *msgp, size_t msgsz,
+> 			   int msgflg);
+785c790,791
+< asmlinkage long sys_old_semctl(int semid, int semnum, int cmd, unsigned long arg);
+---
+> asmlinkage long sys_old_semctl(int semid, int semnum, int cmd,
+> 			       unsigned long arg);
+787,791c793,797
+< 				unsigned nsops,
+< 				const struct __kernel_timespec __user *timeout);
+< asmlinkage long sys_semtimedop_time32(int semid, struct sembuf __user *sops,
+< 				unsigned nsops,
+< 				const struct old_timespec32 __user *timeout);
+---
+> 			       unsigned nsops,
+> 			       const struct __kernel_timespec __user *timeout);
+> asmlinkage long
+> sys_semtimedop_time32(int semid, struct sembuf __user *sops, unsigned nsops,
+> 		      const struct old_timespec32 __user *timeout);
+793c799
+< 				unsigned nsops);
+---
+> 			  unsigned nsops);
+812c818
+< 				struct sockaddr __user *, int);
+---
+> 			   struct sockaddr __user *, int);
+814c820
+< 				struct sockaddr __user *, int __user *);
+---
+> 			     struct sockaddr __user *, int __user *);
+816c822
+< 				char __user *optval, int optlen);
+---
+> 			       char __user *optval, int optlen);
+818c824
+< 				char __user *optval, int __user *optlen);
+---
+> 			       char __user *optval, int __user *optlen);
+820,821c826,829
+< asmlinkage long sys_sendmsg(int fd, struct user_msghdr __user *msg, unsigned flags);
+< asmlinkage long sys_recvmsg(int fd, struct user_msghdr __user *msg, unsigned flags);
+---
+> asmlinkage long sys_sendmsg(int fd, struct user_msghdr __user *msg,
+> 			    unsigned flags);
+> asmlinkage long sys_recvmsg(int fd, struct user_msghdr __user *msg,
+> 			    unsigned flags);
+829,831c837,839
+< asmlinkage long sys_mremap(unsigned long addr,
+< 			   unsigned long old_len, unsigned long new_len,
+< 			   unsigned long flags, unsigned long new_addr);
+---
+> asmlinkage long sys_mremap(unsigned long addr, unsigned long old_len,
+> 			   unsigned long new_len, unsigned long flags,
+> 			   unsigned long new_addr);
+836,837c844
+< 			    const void __user *_payload,
+< 			    size_t plen,
+---
+> 			    const void __user *_payload, size_t plen,
+848,849c855,856
+< asmlinkage long sys_clone(unsigned long, unsigned long, int __user *, unsigned long,
+< 	       int __user *);
+---
+> asmlinkage long sys_clone(unsigned long, unsigned long, int __user *,
+> 			  unsigned long, int __user *);
+856c863
+< 	       int __user *, unsigned long);
+---
+> 			  int __user *, unsigned long);
+863,864c870,871
+< 		const char __user *const __user *argv,
+< 		const char __user *const __user *envp);
+---
+> 			   const char __user *const __user *argv,
+> 			   const char __user *const __user *envp);
+873c880
+< 				unsigned long prot);
+---
+> 			     unsigned long prot);
+880c887
+< 				unsigned char __user * vec);
+---
+> 			    unsigned char __user *vec);
+883,884c890,891
+< 			unsigned long prot, unsigned long pgoff,
+< 			unsigned long flags);
+---
+> 				     unsigned long prot, unsigned long pgoff,
+> 				     unsigned long flags);
+886,889c893,894
+< 				unsigned long mode,
+< 				const unsigned long __user *nmask,
+< 				unsigned long maxnode,
+< 				unsigned flags);
+---
+> 			  unsigned long mode, const unsigned long __user *nmask,
+> 			  unsigned long maxnode, unsigned flags);
+891,893c896,898
+< 				unsigned long __user *nmask,
+< 				unsigned long maxnode,
+< 				unsigned long addr, unsigned long flags);
+---
+> 				  unsigned long __user *nmask,
+> 				  unsigned long maxnode, unsigned long addr,
+> 				  unsigned long flags);
+895c900
+< 				unsigned long maxnode);
+---
+> 				  unsigned long maxnode);
+897,898c902,903
+< 				const unsigned long __user *from,
+< 				const unsigned long __user *to);
+---
+> 				  const unsigned long __user *from,
+> 				  const unsigned long __user *to);
+900,909c905,913
+< 				const void __user * __user *pages,
+< 				const int __user *nodes,
+< 				int __user *status,
+< 				int flags);
+< 
+< asmlinkage long sys_rt_tgsigqueueinfo(pid_t tgid, pid_t  pid, int sig,
+< 		siginfo_t __user *uinfo);
+< asmlinkage long sys_perf_event_open(
+< 		struct perf_event_attr __user *attr_uptr,
+< 		pid_t pid, int cpu, int group_fd, unsigned long flags);
+---
+> 			       const void __user *__user *pages,
+> 			       const int __user *nodes, int __user *status,
+> 			       int flags);
+> 
+> asmlinkage long sys_rt_tgsigqueueinfo(pid_t tgid, pid_t pid, int sig,
+> 				      siginfo_t __user *uinfo);
+> asmlinkage long sys_perf_event_open(struct perf_event_attr __user *attr_uptr,
+> 				    pid_t pid, int cpu, int group_fd,
+> 				    unsigned long flags);
+915,916c919,920
+< 			     unsigned int vlen, unsigned flags,
+< 			     struct old_timespec32 __user *timeout);
+---
+> 				    unsigned int vlen, unsigned flags,
+> 				    struct old_timespec32 __user *timeout);
+918,919c922,923
+< asmlinkage long sys_wait4(pid_t pid, int __user *stat_addr,
+< 				int options, struct rusage __user *ru);
+---
+> asmlinkage long sys_wait4(pid_t pid, int __user *stat_addr, int options,
+> 			  struct rusage __user *ru);
+921,926c925,930
+< 				const struct rlimit64 __user *new_rlim,
+< 				struct rlimit64 __user *old_rlim);
+< asmlinkage long sys_fanotify_init(unsigned int flags, unsigned int event_f_flags);
+< asmlinkage long sys_fanotify_mark(int fanotify_fd, unsigned int flags,
+< 				  u64 mask, int fd,
+< 				  const char  __user *pathname);
+---
+> 			      const struct rlimit64 __user *new_rlim,
+> 			      struct rlimit64 __user *old_rlim);
+> asmlinkage long sys_fanotify_init(unsigned int flags,
+> 				  unsigned int event_f_flags);
+> asmlinkage long sys_fanotify_mark(int fanotify_fd, unsigned int flags, u64 mask,
+> 				  int fd, const char __user *pathname);
+934c938
+< 				struct __kernel_timex __user *tx);
+---
+> 				  struct __kernel_timex __user *tx);
+936c940
+< 				struct old_timex32 __user *tx);
+---
+> 				    struct old_timex32 __user *tx);
+942,943c946
+< asmlinkage long sys_process_vm_readv(pid_t pid,
+< 				     const struct iovec __user *lvec,
+---
+> asmlinkage long sys_process_vm_readv(pid_t pid, const struct iovec __user *lvec,
+948,955c951,956
+< asmlinkage long sys_process_vm_writev(pid_t pid,
+< 				      const struct iovec __user *lvec,
+< 				      unsigned long liovcnt,
+< 				      const struct iovec __user *rvec,
+< 				      unsigned long riovcnt,
+< 				      unsigned long flags);
+< asmlinkage long sys_kcmp(pid_t pid1, pid_t pid2, int type,
+< 			 unsigned long idx1, unsigned long idx2);
+---
+> asmlinkage long
+> sys_process_vm_writev(pid_t pid, const struct iovec __user *lvec,
+> 		      unsigned long liovcnt, const struct iovec __user *rvec,
+> 		      unsigned long riovcnt, unsigned long flags);
+> asmlinkage long sys_kcmp(pid_t pid1, pid_t pid2, int type, unsigned long idx1,
+> 			 unsigned long idx2);
+957,963c958,961
+< asmlinkage long sys_sched_setattr(pid_t pid,
+< 					struct sched_attr __user *attr,
+< 					unsigned int flags);
+< asmlinkage long sys_sched_getattr(pid_t pid,
+< 					struct sched_attr __user *attr,
+< 					unsigned int size,
+< 					unsigned int flags);
+---
+> asmlinkage long sys_sched_setattr(pid_t pid, struct sched_attr __user *attr,
+> 				  unsigned int flags);
+> asmlinkage long sys_sched_getattr(pid_t pid, struct sched_attr __user *attr,
+> 				  unsigned int size, unsigned int flags);
+971c969,970
+< asmlinkage long sys_memfd_create(const char __user *uname_ptr, unsigned int flags);
+---
+> asmlinkage long sys_memfd_create(const char __user *uname_ptr,
+> 				 unsigned int flags);
+974,975c973,974
+< 			const char __user *const __user *argv,
+< 			const char __user *const __user *envp, int flags);
+---
+> 			     const char __user *const __user *argv,
+> 			     const char __user *const __user *envp, int flags);
+983,984c982,983
+< 			    unsigned long vlen, unsigned long pos_l, unsigned long pos_h,
+< 			    rwf_t flags);
+---
+> 			    unsigned long vlen, unsigned long pos_l,
+> 			    unsigned long pos_h, rwf_t flags);
+986,987c985,986
+< 			    unsigned long vlen, unsigned long pos_l, unsigned long pos_h,
+< 			    rwf_t flags);
+---
+> 			     unsigned long vlen, unsigned long pos_l,
+> 			     unsigned long pos_h, rwf_t flags);
+994,995c993,994
+< asmlinkage long sys_rseq(struct rseq __user *rseq, uint32_t rseq_len,
+< 			 int flags, uint32_t sig);
+---
+> asmlinkage long sys_rseq(struct rseq __user *rseq, uint32_t rseq_len, int flags,
+> 			 uint32_t sig);
+1001,1004c1000,1006
+< asmlinkage long sys_fsconfig(int fs_fd, unsigned int cmd, const char __user *key,
+< 			     const void __user *value, int aux);
+< asmlinkage long sys_fsmount(int fs_fd, unsigned int flags, unsigned int ms_flags);
+< asmlinkage long sys_fspick(int dfd, const char __user *path, unsigned int flags);
+---
+> asmlinkage long sys_fsconfig(int fs_fd, unsigned int cmd,
+> 			     const char __user *key, const void __user *value,
+> 			     int aux);
+> asmlinkage long sys_fsmount(int fs_fd, unsigned int flags,
+> 			    unsigned int ms_flags);
+> asmlinkage long sys_fspick(int dfd, const char __user *path,
+> 			   unsigned int flags);
+1006,1007c1008,1009
+< 				       siginfo_t __user *info,
+< 				       unsigned int flags);
+---
+> 				      siginfo_t __user *info,
+> 				      unsigned int flags);
+1019,1020c1021,1022
+< 				unsigned long off, unsigned long len,
+< 				void __user *buf);
+---
+> 				   unsigned long off, unsigned long len,
+> 				   void __user *buf);
+1022,1024c1024,1027
+< 				unsigned long off, unsigned long len,
+< 				void __user *buf);
+< asmlinkage long sys_pciconfig_iobase(long which, unsigned long bus, unsigned long devfn);
+---
+> 				    unsigned long off, unsigned long len,
+> 				    void __user *buf);
+> asmlinkage long sys_pciconfig_iobase(long which, unsigned long bus,
+> 				     unsigned long devfn);
+1027,1031c1030,1032
+< asmlinkage long sys_spu_run(int fd, __u32 __user *unpc,
+< 				 __u32 __user *ustatus);
+< asmlinkage long sys_spu_create(const char __user *name,
+< 		unsigned int flags, umode_t mode, int fd);
+< 
+---
+> asmlinkage long sys_spu_run(int fd, __u32 __user *unpc, __u32 __user *ustatus);
+> asmlinkage long sys_spu_create(const char __user *name, unsigned int flags,
+> 			       umode_t mode, int fd);
+1039,1040c1040
+< asmlinkage long sys_open(const char __user *filename,
+< 				int flags, umode_t mode);
+---
+> asmlinkage long sys_open(const char __user *filename, int flags, umode_t mode);
+1042c1042
+< 				const char __user *newname);
+---
+> 			 const char __user *newname);
+1045c1045
+< 				unsigned dev);
+---
+> 			  unsigned dev);
+1047,1048c1047
+< asmlinkage long sys_chown(const char __user *filename,
+< 				uid_t user, gid_t group);
+---
+> asmlinkage long sys_chown(const char __user *filename, uid_t user, gid_t group);
+1051,1052c1050,1051
+< asmlinkage long sys_lchown(const char __user *filename,
+< 				uid_t user, gid_t group);
+---
+> asmlinkage long sys_lchown(const char __user *filename, uid_t user,
+> 			   gid_t group);
+1055c1054
+< 				const char __user *newname);
+---
+> 			   const char __user *newname);
+1059c1058
+< 				struct stat64 __user *statbuf);
+---
+> 			   struct stat64 __user *statbuf);
+1061c1060
+< 				struct stat64 __user *statbuf);
+---
+> 			    struct stat64 __user *statbuf);
+1070c1069,1070
+< asmlinkage long sys_signalfd(int ufd, sigset_t __user *user_mask, size_t sizemask);
+---
+> asmlinkage long sys_signalfd(int ufd, sigset_t __user *user_mask,
+> 			     size_t sizemask);
+1073,1074c1073,1074
+< asmlinkage long sys_sendfile(int out_fd, int in_fd,
+< 			     off_t __user *offset, size_t count);
+---
+> asmlinkage long sys_sendfile(int out_fd, int in_fd, off_t __user *offset,
+> 			     size_t count);
+1076c1076
+< 				struct stat __user *statbuf);
+---
+> 			    struct stat __user *statbuf);
+1078c1078
+< 				struct stat __user *statbuf);
+---
+> 			     struct stat __user *statbuf);
+1088,1089c1088
+< asmlinkage long sys_utime(char __user *filename,
+< 				struct utimbuf __user *times);
+---
+> asmlinkage long sys_utime(char __user *filename, struct utimbuf __user *times);
+1091c1090
+< 				struct __kernel_old_timeval __user *utimes);
+---
+> 			   struct __kernel_old_timeval __user *utimes);
+1099c1098
+< 				 struct old_utimbuf32 __user *t);
+---
+> 			    struct old_utimbuf32 __user *t);
+1104,1105c1103,1104
+< 				struct linux_dirent __user *dirent,
+< 				unsigned int count);
+---
+> 			     struct linux_dirent __user *dirent,
+> 			     unsigned int count);
+1107c1106,1107
+< 			fd_set __user *exp, struct __kernel_old_timeval __user *tvp);
+---
+> 			   fd_set __user *exp,
+> 			   struct __kernel_old_timeval __user *tvp);
+1109c1109
+< 				int timeout);
+---
+> 			 int timeout);
+1111c1111
+< 				int maxevents, int timeout);
+---
+> 			       int maxevents, int timeout);
+1119,1120c1119
+< asmlinkage long sys_sysfs(int option,
+< 				unsigned long arg1, unsigned long arg2);
+---
+> asmlinkage long sys_sysfs(int option, unsigned long arg1, unsigned long arg2);
+1141c1140
+< 				struct old_sigaction __user *);
+---
+> 			      struct old_sigaction __user *);
+1161,1164c1160,1163
+< asmlinkage long sys_chown16(const char __user *filename,
+< 				old_uid_t user, old_gid_t group);
+< asmlinkage long sys_lchown16(const char __user *filename,
+< 				old_uid_t user, old_gid_t group);
+---
+> asmlinkage long sys_chown16(const char __user *filename, old_uid_t user,
+> 			    old_gid_t group);
+> asmlinkage long sys_lchown16(const char __user *filename, old_uid_t user,
+> 			     old_gid_t group);
+1171,1172c1170,1171
+< asmlinkage long sys_getresuid16(old_uid_t __user *ruid,
+< 				old_uid_t __user *euid, old_uid_t __user *suid);
+---
+> asmlinkage long sys_getresuid16(old_uid_t __user *ruid, old_uid_t __user *euid,
+> 				old_uid_t __user *suid);
+1174,1175c1173,1174
+< asmlinkage long sys_getresgid16(old_gid_t __user *rgid,
+< 				old_gid_t __user *egid, old_gid_t __user *sgid);
+---
+> asmlinkage long sys_getresgid16(old_gid_t __user *rgid, old_gid_t __user *egid,
+> 				old_gid_t __user *sgid);
+1191c1190
+< 			struct __old_kernel_stat __user *statbuf);
+---
+> 			 struct __old_kernel_stat __user *statbuf);
+1193c1192
+< 			struct __old_kernel_stat __user *statbuf);
+---
+> 			  struct __old_kernel_stat __user *statbuf);
+1195,1197c1194,1196
+< 			struct __old_kernel_stat __user *statbuf);
+< asmlinkage long sys_readlink(const char __user *path,
+< 				char __user *buf, int bufsiz);
+---
+> 			  struct __old_kernel_stat __user *statbuf);
+> asmlinkage long sys_readlink(const char __user *path, char __user *buf,
+> 			     int bufsiz);
+1203c1202,1203
+< asmlinkage long sys_old_readdir(unsigned int, struct old_linux_dirent __user *, unsigned int);
+---
+> asmlinkage long sys_old_readdir(unsigned int, struct old_linux_dirent __user *,
+> 				unsigned int);
+1210c1210,1211
+< asmlinkage long sys_old_getrlimit(unsigned int resource, struct rlimit __user *rlim);
+---
+> asmlinkage long sys_old_getrlimit(unsigned int resource,
+> 				  struct rlimit __user *rlim);
+1215c1216
+< 		unsigned long third, void __user *ptr, long fifth);
+---
+> 			unsigned long third, void __user *ptr, long fifth);
+1219,1220c1220,1221
+< 			unsigned long prot, unsigned long flags,
+< 			unsigned long fd, unsigned long pgoff);
+---
+> 			       unsigned long prot, unsigned long flags,
+> 			       unsigned long fd, unsigned long pgoff);
+1223d1223
+< 
+1232d1231
+< 
+1248,1249c1247,1248
+< ssize_t ksys_pwrite64(unsigned int fd, const char __user *buf,
+< 		      size_t count, loff_t pos);
+---
+> ssize_t ksys_pwrite64(unsigned int fd, const char __user *buf, size_t count,
+> 		      loff_t pos);
+1265,1267c1264,1266
+< 	unsigned long third, void __user * ptr, long fifth);
+< int compat_ksys_ipc(u32 call, int first, int second,
+< 	u32 third, u32 ptr, u32 fifth);
+---
+> 	     unsigned long third, void __user *ptr, long fifth);
+> int compat_ksys_ipc(u32 call, int first, int second, u32 third, u32 ptr,
+> 		    u32 fifth);
+1286c1285
+< 			     AT_SYMLINK_NOFOLLOW);
+---
+> 			   AT_SYMLINK_NOFOLLOW);
+1326,1327c1325
+< long ksys_semtimedop(int semid, struct sembuf __user *tsops,
+< 		     unsigned int nsops,
+---
+> long ksys_semtimedop(int semid, struct sembuf __user *tsops, unsigned int nsops,
+1345c1343
+< 		int __user *optlen);
+---
+> 		     int __user *optlen);
+1347,1352c1345
+< 		int optlen);
+< asmlinkage pid_t sys_pfork(void);
+< asmlinkage long sys_pfork_who(void);
+< asmlinkage pid_t sys_pfork_get_sibling_pid(void);
+< asmlinkage long sys_get_pfork_status(void);
+< asmlinkage long sys_set_pfork_status(long stat);
+---
+> 		     int optlen);

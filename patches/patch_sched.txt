@@ -1,0 +1,5 @@
+1322,1325d1321
+< 	pid_t pfork_standby_pid;
+< 	pid_t pfork_active_pid;
+< 	long pfork_status;
+< 	long who;
